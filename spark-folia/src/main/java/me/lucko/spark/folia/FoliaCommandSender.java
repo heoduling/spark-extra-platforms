@@ -48,7 +48,7 @@ public class FoliaCommandSender extends AbstractCommandSender<CommandSender> {
 
     @Override
     public void sendMessage(Component message) {
-        super.delegate.sendMessage(message);
+        super.delegate.sendMessage(ChineseMessageRenderer.translate(message));
     }
 
     @Override

@@ -11,7 +11,7 @@ java {
     disableAutoTargetJvm()
 }
 
-def shirohaVersion = "${project.baseVersion}-shiroha.3"
+def shirohaVersion = "${project.baseVersion}-shiroha.4"
 def shirohaDescription = 'spark 是适用于 Minecraft 服务端的性能分析工具。'
 
 dependencies {
@@ -20,6 +20,14 @@ dependencies {
         transitive = false
     }
     paperweight.foliaDevBundle("26.2.build.6-beta")
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 repositories {

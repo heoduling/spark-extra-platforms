@@ -19,6 +19,8 @@ Only the Folia artifact is branded as a Shiroha build. Other platform modules re
 - `/spark reload` reloads `config.json` and restarts spark's runtime services without replacing the plugin classloader. Permission: `spark.reload` (operators by default).
 - Full plugin unload/reload tools can discard the old classloader without leaving spark's shared monitoring executor running. This path was tested with PlugManX 3.1.0-Beta.2.
 - Shiroha-specific plugin metadata and hot-reload feedback are localized in Chinese. Command names and permission nodes remain unchanged.
+- Folia command responses and operational logs are localized in Chinese while preserving commands, flags, URLs, technical identifiers, formatting and click actions.
+- Health and ZGC reports include short interpretation notes for memory trends, loopback traffic and ZGC cycle timing.
 
 Reloading stops any active profiling session. The background profiler is restarted when it is enabled in the configuration. Run `/spark healthreport` after a full plugin reload to confirm that the new instance is responding.
 

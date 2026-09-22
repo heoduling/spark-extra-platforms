@@ -162,12 +162,12 @@ public class FoliaSparkPlugin extends JavaPlugin implements SparkPlugin {
 
     @Override
     public void log(Level level, String msg) {
-        getLogger().log(level, msg);
+        getLogger().log(level, ChineseMessageRenderer.translatePlain(msg));
     }
 
     @Override
     public void log(Level level, String msg, Throwable throwable) {
-        getLogger().log(level, msg, throwable);
+        getLogger().log(level, ChineseMessageRenderer.translatePlain(msg), throwable);
     }
 
     @Override
