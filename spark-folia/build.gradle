@@ -11,6 +11,8 @@ java {
     disableAutoTargetJvm()
 }
 
+def shirohaVersion = "${project.baseVersion}-shiroha.1"
+
 dependencies {
     implementation "me.lucko:spark-common:${project.baseVersion}-SNAPSHOT"
     implementation(project(':spark-folia:spark-folia-12111-compat')) {
@@ -26,7 +28,7 @@ repositories {
 processResources {
     from(sourceSets.main.resources.srcDirs) {
         expand (
-                'pluginVersion': project.pluginVersion,
+                'pluginVersion': shirohaVersion,
                 'pluginDescription': project.pluginDescription
         )
         include 'plugin.yml'
@@ -34,7 +36,7 @@ processResources {
 }
 
 shadowJar {
-    archiveFileName = "spark-${project.baseVersion}-build${project.extraVersion}-folia.jar"
+    archiveFileName = "spark-${shirohaVersion}-folia.jar"
 
     dependencies {
         exclude(dependency('net.kyori:^(?!adventure-text-feature-pagination).+$'))
