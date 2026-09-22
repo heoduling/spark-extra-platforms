@@ -133,7 +133,9 @@ public class FoliaTickStatistics implements TickStatistics {
     public double tps(StatisticWindow.TicksPerSecond window) {
         long nanoTime = System.nanoTime();
         return this.regionSupplier.get().stream()
-                .map(region -> region.getData().getRegionSchedulingHandle())
+                .map(ThreadedRegion::getData)
+                .filter(Objects::nonNull)
+                .map(TickRegionData::getRegionSchedulingHandle)
                 .map(handle -> switch (window) {
                     case SECONDS_5 -> handle.getTickReport5s(nanoTime);
                     case SECONDS_10 -> handle.getTickReport15s(nanoTime); // close enough!
@@ -150,7 +152,9 @@ public class FoliaTickStatistics implements TickStatistics {
     public DoubleAverageInfo mspt(StatisticWindow.MillisPerTick window) {
         long nanoTime = System.nanoTime();
         List<SegmentedAverage> averages = this.regionSupplier.get().stream()
-                .map(region -> region.getData().getRegionSchedulingHandle())
+                .map(ThreadedRegion::getData)
+                .filter(Objects::nonNull)
+                .map(TickRegionData::getRegionSchedulingHandle)
                 .map(handle -> switch (window) {
                     case SECONDS_10 -> handle.getTickReport15s(nanoTime); // close enough!
                     case MINUTES_1 -> handle.getTickReport1m(nanoTime);
