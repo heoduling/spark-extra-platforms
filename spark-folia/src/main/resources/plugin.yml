@@ -15,9 +15,9 @@ folia-supported: true
 
 commands:
   spark:
-    description: Main plugin command
+    description: spark 性能分析主命令
 
 permissions:
   spark.reload:
-    description: Reloads spark configuration and runtime services
+    description: 允许重新加载 spark 配置和运行组件
     default: op

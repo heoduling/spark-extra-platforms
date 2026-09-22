@@ -11,7 +11,8 @@ java {
     disableAutoTargetJvm()
 }
 
-def shirohaVersion = "${project.baseVersion}-shiroha.2"
+def shirohaVersion = "${project.baseVersion}-shiroha.3"
+def shirohaDescription = 'spark 是适用于 Minecraft 服务端的性能分析工具。'
 
 dependencies {
     implementation "me.lucko:spark-common:${project.baseVersion}-SNAPSHOT"
@@ -29,7 +30,7 @@ processResources {
     from(sourceSets.main.resources.srcDirs) {
         expand (
                 'pluginVersion': shirohaVersion,
-                'pluginDescription': project.pluginDescription
+                'pluginDescription': shirohaDescription
         )
         include 'plugin.yml'
     }

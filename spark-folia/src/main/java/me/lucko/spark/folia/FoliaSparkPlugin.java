@@ -62,7 +62,7 @@ public class FoliaSparkPlugin extends JavaPlugin implements SparkPlugin {
     @Override
     public void onEnable() {
         if (!classExists("io.papermc.paper.threadedregions.scheduler.RegionScheduler")) {
-            getLogger().severe("This version of spark requires Folia! Please use the regular Bukkit plugin instead.");
+            getLogger().severe("此版本的 spark 仅支持 Folia！其他 Bukkit 服务端请使用常规 Bukkit 版本。");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -89,23 +89,23 @@ public class FoliaSparkPlugin extends JavaPlugin implements SparkPlugin {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             if (!sender.hasPermission(RELOAD_PERMISSION)) {
-                sender.sendMessage("[spark] You do not have permission to reload spark.");
+                sender.sendMessage("[spark] 你没有执行热重载的权限。");
                 return true;
             }
 
             try {
                 reloadPlatform();
-                sender.sendMessage("[spark] Reload complete.");
+                sender.sendMessage("[spark] 热重载完成。");
             } catch (RuntimeException | Error e) {
-                getLogger().log(Level.SEVERE, "Failed to reload spark", e);
-                sender.sendMessage("[spark] Reload failed. See the server log for details.");
+                getLogger().log(Level.SEVERE, "spark 热重载失败", e);
+                sender.sendMessage("[spark] 热重载失败，请查看服务端日志了解详情。");
             }
             return true;
         }
 
         SparkPlatform platform = this.platform;
         if (platform == null) {
-            sender.sendMessage("[spark] spark is currently reloading.");
+            sender.sendMessage("[spark] spark 正在热重载，请稍后重试。");
             return true;
         }
 
