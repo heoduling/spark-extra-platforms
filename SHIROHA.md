@@ -14,6 +14,13 @@ Shiroha can retire a region between spark's region snapshot and statistics sampl
 
 Only the Folia artifact is branded as a Shiroha build. Other platform modules remain unchanged.
 
+## Hot reload
+
+- `/spark reload` reloads `config.json` and restarts spark's runtime services without replacing the plugin classloader. Permission: `spark.reload` (operators by default).
+- Full plugin unload/reload tools can discard the old classloader without leaving spark's shared monitoring executor running. This path was tested with PlugManX 3.1.0-Beta.2.
+
+Reloading stops any active profiling session. The background profiler is restarted when it is enabled in the configuration. Run `/spark healthreport` after a full plugin reload to confirm that the new instance is responding.
+
 ## Upstream
 
 The unmodified upstream project is available at <https://github.com/lucko/spark-extra-platforms>.

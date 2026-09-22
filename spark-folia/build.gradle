@@ -11,7 +11,7 @@ java {
     disableAutoTargetJvm()
 }
 
-def shirohaVersion = "${project.baseVersion}-shiroha.1"
+def shirohaVersion = "${project.baseVersion}-shiroha.2"
 
 dependencies {
     implementation "me.lucko:spark-common:${project.baseVersion}-SNAPSHOT"

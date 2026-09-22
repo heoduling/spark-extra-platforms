@@ -16,3 +16,8 @@ folia-supported: true
 commands:
   spark:
     description: Main plugin command
+
+permissions:
+  spark.reload:
+    description: Reloads spark configuration and runtime services
+    default: op

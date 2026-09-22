@@ -25,6 +25,7 @@ import me.lucko.spark.api.Spark;
 import me.lucko.spark.common.SparkPlatform;
 import me.lucko.spark.common.SparkPlugin;
 import me.lucko.spark.common.metric.Metrics;
+import me.lucko.spark.common.monitor.MonitoringExecutor;
 import me.lucko.spark.common.monitor.ping.PlayerPingProvider;
 import me.lucko.spark.common.monitor.tick.TickStatistics;
 import me.lucko.spark.common.platform.PlatformInfo;
@@ -41,16 +42,22 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
 public class FoliaSparkPlugin extends JavaPlugin implements SparkPlugin {
+    private static final String RELOAD_PERMISSION = "spark.reload";
+
+    private final Object lifecycleLock = new Object();
+
     private ThreadDumper gameThreadDumper;
 
-    private SparkPlatform platform;
+    private volatile SparkPlatform platform;
 
     @Override
     public void onEnable() {
@@ -62,26 +69,62 @@ public class FoliaSparkPlugin extends JavaPlugin implements SparkPlugin {
 
         this.gameThreadDumper = new ThreadDumper.Regex(ImmutableSet.of("Folia Region Scheduler Thread #\\d+"));
 
-        this.platform = new SparkPlatform(this);
-        this.platform.enable();
+        enablePlatform();
     }
 
     @Override
     public void onDisable() {
-        if (this.platform != null) {
-            this.platform.disable();
+        synchronized (this.lifecycleLock) {
+            try {
+                disablePlatform();
+            } finally {
+                // The shared monitoring executor owns long-lived threads and is not closed by SparkPlatform.
+                // Stop it when this classloader is being discarded so a plugin manager can load a fresh copy.
+                MonitoringExecutor.INSTANCE.shutdownNow();
+            }
         }
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        this.platform.executeCommand(new FoliaCommandSender(sender), args);
+        if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
+            if (!sender.hasPermission(RELOAD_PERMISSION)) {
+                sender.sendMessage("[spark] You do not have permission to reload spark.");
+                return true;
+            }
+
+            try {
+                reloadPlatform();
+                sender.sendMessage("[spark] Reload complete.");
+            } catch (RuntimeException | Error e) {
+                getLogger().log(Level.SEVERE, "Failed to reload spark", e);
+                sender.sendMessage("[spark] Reload failed. See the server log for details.");
+            }
+            return true;
+        }
+
+        SparkPlatform platform = this.platform;
+        if (platform == null) {
+            sender.sendMessage("[spark] spark is currently reloading.");
+            return true;
+        }
+
+        platform.executeCommand(new FoliaCommandSender(sender), args);
         return true;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        return this.platform.tabCompleteCommand(new FoliaCommandSender(sender), args);
+        SparkPlatform platform = this.platform;
+        List<String> completions = platform == null
+                ? new ArrayList<>()
+                : new ArrayList<>(platform.tabCompleteCommand(new FoliaCommandSender(sender), args));
+
+        if (args.length == 1 && sender.hasPermission(RELOAD_PERMISSION)
+                && "reload".startsWith(args[0].toLowerCase(Locale.ROOT))) {
+            completions.add("reload");
+        }
+        return completions;
     }
 
     @Override
@@ -179,6 +222,45 @@ public class FoliaSparkPlugin extends JavaPlugin implements SparkPlugin {
     @Override
     public void registerApi(Spark api) {
         getServer().getServicesManager().register(Spark.class, api, this, ServicePriority.Normal);
+    }
+
+    private void reloadPlatform() {
+        synchronized (this.lifecycleLock) {
+            disablePlatform();
+            enablePlatform();
+        }
+    }
+
+    private void enablePlatform() {
+        synchronized (this.lifecycleLock) {
+            SparkPlatform newPlatform = new SparkPlatform(this);
+            try {
+                newPlatform.enable();
+                this.platform = newPlatform;
+            } catch (RuntimeException | Error e) {
+                try {
+                    newPlatform.disable();
+                } catch (RuntimeException | Error cleanupFailure) {
+                    e.addSuppressed(cleanupFailure);
+                } finally {
+                    getServer().getServicesManager().unregisterAll(this);
+                }
+                throw e;
+            }
+        }
+    }
+
+    private void disablePlatform() {
+        SparkPlatform oldPlatform = this.platform;
+        this.platform = null;
+        try {
+            if (oldPlatform != null) {
+                oldPlatform.disable();
+            }
+        } finally {
+            // Internal reloads do not pass through the server's plugin-disable cleanup.
+            getServer().getServicesManager().unregisterAll(this);
+        }
     }
 
     private static boolean classExists(String className) {
