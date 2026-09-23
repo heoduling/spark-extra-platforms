@@ -44,6 +44,7 @@ final class ChineseMessageRenderer {
 
     private static final Pattern AGE = Pattern.compile("^(?:(\\d+)d\\s*)?(?:(\\d+)h\\s*)?(?:(\\d+)m\\s*)?(?:(\\d+)s\\s*)?ago$");
     private static final Pattern DURATION_TOKEN = Pattern.compile("(?<![A-Za-z])(\\d+)([dhms])(?=\\s|$|[。,.，（，）)])");
+    private static final Pattern DURATION_ONLY = Pattern.compile("(?:\\d+[dhms](?:\\s+|$))+");
 
     private ChineseMessageRenderer() {
     }
@@ -120,6 +121,57 @@ final class ChineseMessageRenderer {
         if (message.equals("CONSOLE")) {
             return "控制台";
         }
+        if (message.equals("Compressed ")) {
+            return "已压缩 ";
+        }
+        if (message.equals("end of GC pause ")) {
+            return "暂停阶段 ";
+        }
+        if (message.equals("end of GC cycle ")) {
+            return "回收周期 ";
+        }
+        if (message.equals("Young Gen ")) {
+            return "年轻代 ";
+        }
+        if (message.equals("Old Gen ")) {
+            return "老年代 ";
+        }
+        if (message.equals("Metaspace")) {
+            return "元空间";
+        }
+        if (message.equals("Compressed Class Space")) {
+            return "压缩类空间";
+        }
+        if (message.equals("CodeHeap 'profiled nmethods'")) {
+            return "代码缓存（已分析的方法）";
+        }
+        if (message.equals("CodeHeap 'non-profiled nmethods'")) {
+            return "代码缓存（未分析的方法）";
+        }
+        if (message.equals("CodeHeap 'non-nmethods'")) {
+            return "代码缓存（非方法代码）";
+        }
+        String gcCausePrefix = " ms. (cause = ";
+        int gcCauseIndex = message.indexOf(gcCausePrefix);
+        if (gcCauseIndex >= 0 && message.endsWith(")")) {
+            String cause = message.substring(gcCauseIndex + gcCausePrefix.length(), message.length() - 1);
+            if (cause.equals("Diagnostic Command")) {
+                cause = "诊断命令";
+            } else if (cause.equals("Allocation Rate")) {
+                cause = "分配速率";
+            }
+            message = message.substring(0, gcCauseIndex) + " ms（原因：" + cause + "）";
+        }
+        if (message.endsWith(" ms.")) {
+            message = message.substring(0, message.length() - 1) + "。";
+        }
+        String pingUnavailablePrefix = "Ping data is not available for '";
+        if (message.startsWith(pingUnavailablePrefix) && message.endsWith("'.")) {
+            return "无法获取玩家“" + message.substring(pingUnavailablePrefix.length(), message.length() - 2) + "”的延迟数据。";
+        }
+        if (DURATION_ONLY.matcher(message).matches()) {
+            return localizeDurationTokens(message);
+        }
 
         Matcher age = AGE.matcher(message);
         if (age.matches()) {
@@ -143,6 +195,10 @@ final class ChineseMessageRenderer {
         String translated = message;
         for (Map.Entry<String, String> entry : TRANSLATIONS.entrySet()) {
             translated = translated.replace(entry.getKey(), entry.getValue());
+        }
+
+        if (translated.contains("（如果不希望它继续运行，请输入：/") && translated.endsWith(")")) {
+            translated = translated.substring(0, translated.length() - 1) + "）";
         }
 
         if (translated.endsWith(" rx")) {
@@ -244,7 +300,6 @@ final class ChineseMessageRenderer {
         add(translations, "Average Pings (min/med/95%ile/max ms) from now, last 15m:", "延迟统计（最小值 / 中位数 / 95 分位 / 最大值，当前 / 最近 15 分钟）：");
         add(translations, "There is not enough data to show ping averages yet. Please try again later.", "当前样本不足，暂时无法计算平均延迟，请稍后重试。");
         add(translations, "Ping data is not available on this platform.", "当前平台不支持获取延迟数据。");
-        add(translations, "Ping data is not available for '", "无法获取玩家“");
         add(translations, " ms ping.", " ms。");
         add(translations, "Generating server health report...", "正在采集服务器状态，请稍候……");
         add(translations, "Health Report:", "服务器状态报告已生成，点击下方链接查看：");
@@ -296,7 +351,6 @@ final class ChineseMessageRenderer {
         add(translations, " ms avg", " ms/次");
         add(translations, " avg frequency", "（平均间隔）");
         add(translations, " lasting ", "，耗时 ");
-        add(translations, " ms. (cause = ", " ms（原因：");
         add(translations, " freed from ", "，释放自 ");
         add(translations, " moved to ", "，转移至 ");
 
@@ -371,7 +425,6 @@ final class ChineseMessageRenderer {
         add(translations, "An error occurred whilst saving the data.", "保存数据时发生错误。");
         add(translations, "Heap dump summary", "堆内存摘要");
         add(translations, "Heap dump", "堆转储");
-        add(translations, "Compressed ", "已压缩 ");
         add(translations, " so far... (", "，当前进度 (");
         add(translations, " --> ", " → ");
 

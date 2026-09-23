@@ -65,6 +65,40 @@ class ChineseMessageRendererTest {
         assertEquals("lo 接收", ChineseMessageRenderer.translatePlain("lo rx"));
         assertEquals("3天 2小时 5分钟前", ChineseMessageRenderer.translatePlain("3d 2h 5m ago"));
         assertEquals("控制台", ChineseMessageRenderer.translatePlain("CONSOLE"));
+        assertEquals("1 分 5 秒", ChineseMessageRenderer.translatePlain("1m 5s"));
+        assertEquals("21 秒", ChineseMessageRenderer.translatePlain("21s"));
+    }
+
+    @Test
+    void translatesSplitGcMonitorEventsAndJvmMemoryPools() {
+        Component pause = Component.text("end of GC pause ")
+                .append(Component.text("GC"))
+                .append(Component.text(" lasting "))
+                .append(Component.text("0"))
+                .append(Component.text(" ms. (cause = Diagnostic Command)"));
+
+        assertEquals("暂停阶段 GC，耗时 0 ms（原因：诊断命令）",
+                PLAIN.serialize(ChineseMessageRenderer.translate(pause)));
+        assertEquals("回收周期 GC，耗时 197 ms（原因：分配速率）",
+                PLAIN.serialize(ChineseMessageRenderer.translate(Component.text("end of GC cycle ")
+                        .append(Component.text("GC"))
+                        .append(Component.text(" lasting 197 ms. (cause = Allocation Rate)")))));
+        assertEquals("老年代 GC，耗时 59 ms（原因：诊断命令）",
+                PLAIN.serialize(ChineseMessageRenderer.translate(Component.text("Old Gen ")
+                        .append(Component.text("GC lasting 59 ms. (cause = Diagnostic Command)")))));
+        assertEquals("代码缓存（已分析的方法）", ChineseMessageRenderer.translatePlain("CodeHeap 'profiled nmethods'"));
+        assertEquals("代码缓存（未分析的方法）", ChineseMessageRenderer.translatePlain("CodeHeap 'non-profiled nmethods'"));
+        assertEquals("元空间", ChineseMessageRenderer.translatePlain("Metaspace"));
+        assertEquals("压缩类空间", ChineseMessageRenderer.translatePlain("Compressed Class Space"));
+        assertEquals("已压缩 ", ChineseMessageRenderer.translatePlain("Compressed "));
+    }
+
+    @Test
+    void translatesDynamicErrorAndProfilerFeedback() {
+        assertEquals("无法获取玩家“NonexistentPlayer”的延迟数据。",
+                ChineseMessageRenderer.translatePlain("Ping data is not available for 'NonexistentPlayer'."));
+        assertEquals("后台性能分析器已重新启动。（如果不希望它继续运行，请输入：/spark profiler cancel）",
+                ChineseMessageRenderer.translatePlain("Restarted the background profiler. (If you don't want this to happen, run: /spark profiler cancel)"));
     }
 
     @Test

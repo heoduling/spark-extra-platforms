@@ -11,7 +11,7 @@ java {
     disableAutoTargetJvm()
 }
 
-def shirohaVersion = "${project.baseVersion}-shiroha.4"
+def shirohaVersion = "${project.baseVersion}-shiroha.5"
 def shirohaDescription = 'spark 是适用于 Minecraft 服务端的性能分析工具。'
 
 dependencies {
