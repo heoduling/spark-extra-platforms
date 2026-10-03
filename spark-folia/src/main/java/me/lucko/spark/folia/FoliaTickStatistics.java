@@ -47,11 +47,13 @@ import java.util.function.Supplier;
 
 public class FoliaTickStatistics implements TickStatistics {
     private final Metrics metrics;
+    private final Server server;
     private final Supplier<List<ThreadedRegion<TickRegionData, TickRegionSectionData>>> regionSupplier;
     private final ScheduledFuture<?> metricsTask;
 
     public FoliaTickStatistics(Metrics metrics, Server server) {
         this.metrics = metrics;
+        this.server = server;
         this.regionSupplier = new WeakReferenceExpiringSupplier<>(() -> getRegions(server), 5, TimeUnit.MILLISECONDS);
 
         // collect metrics every 15 seconds - although the Metrics class expects recordings every 10 seconds,
@@ -61,9 +63,28 @@ public class FoliaTickStatistics implements TickStatistics {
     }
 
     public void collectMetrics() {
+        if (this.server.isStopping()) {
+            return;
+        }
+
         long time = TimeUtil.monotonicCurrentTimeMillis();
-        this.metrics.tps().record(time, tps10Sec());
-        this.metrics.tickDuration().record(time, new ImmutableDoubleAverageInfo(duration10Sec()));
+        double tps;
+        ImmutableDoubleAverageInfo duration;
+        try {
+            tps = tps10Sec();
+            duration = new ImmutableDoubleAverageInfo(duration10Sec());
+        } catch (IllegalStateException e) {
+            // Folia halts the region scheduler before it disables plugins.
+            if (this.server.isStopping() || "Scheduler halted".equals(e.getMessage())) {
+                return;
+            }
+            throw e;
+        }
+
+        if (!this.server.isStopping()) {
+            this.metrics.tps().record(time, tps);
+            this.metrics.tickDuration().record(time, duration);
+        }
     }
 
     @Override
